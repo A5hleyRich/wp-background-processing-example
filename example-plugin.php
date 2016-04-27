@@ -13,14 +13,9 @@ Domain Path: /languages/
 class Example_Background_Processing {
 
 	/**
-	 * @var WP_Example_Request
+	 * @var WP_Example_Job
 	 */
-	protected $process_single;
-
-	/**
-	 * @var WP_Example_Process
-	 */
-	protected $process_all;
+	protected $job;
 
 	/**
 	 * Example_Background_Processing constructor.
@@ -35,12 +30,7 @@ class Example_Background_Processing {
 	 * Init
 	 */
 	public function init() {
-		require_once plugin_dir_path( __FILE__ ) . 'class-logger.php';
-		require_once plugin_dir_path( __FILE__ ) . 'async-requests/class-example-request.php';
-		require_once plugin_dir_path( __FILE__ ) . 'background-processes/class-example-process.php';
-
-		$this->process_single = new WP_Example_Request();
-		$this->process_all    = new WP_Example_Process();
+		require_once plugin_dir_path( __FILE__ ) . 'class-job.php';
 	}
 
 	/**
@@ -103,7 +93,7 @@ class Example_Background_Processing {
 		$rand  = array_rand( $names, 1 );
 		$name  = $names[ $rand ];
 
-		$this->process_single->data( array( 'name' => $name ) )->dispatch();
+		wp_queue( new WP_Example_Job( $name ), MINUTE_IN_SECONDS );
 	}
 
 	/**
@@ -113,10 +103,8 @@ class Example_Background_Processing {
 		$names = $this->get_names();
 
 		foreach ( $names as $name ) {
-			$this->process_all->push_to_queue( $name );
+			wp_queue( new WP_Example_Job( $name ) );
 		}
-
-		$this->process_all->save()->dispatch();
 	}
 
 	/**
